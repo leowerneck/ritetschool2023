@@ -1,4 +1,7 @@
 # 2023 North American Einstein Toolkit Summer School
+
+You can also access this repository using the shorter URL: https://tinyurl.com/analysiset2023
+
 ## Tutorial: Simulation Analysis
 
 This repository contains example parameter files to illustrate how to use some
