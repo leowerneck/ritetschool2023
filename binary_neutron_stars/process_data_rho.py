@@ -26,6 +26,7 @@ def process_one_iteration(it):
 
     # Now access the data directly and convert units
     rho_uniform.data *= D.value
+    t   = rho_all.time_at_iteration(it) * T.value
     x   = x_uniform.data * L.value
     y   = y_uniform.data * L.value
     rho = rho_uniform.log10().data
@@ -34,6 +35,7 @@ def process_one_iteration(it):
     fig, ax = subplots(figsize=(4,4))
     im  = pcolormesh(x, y, rho, cmap="gnuplot", vmin=9, vmax=15)
     cb  = fig.colorbar(im, label=r"$\log_{10}\left(\rho\ [\mathrm{g/cm^{3}}]\right)$")
+    ax.set_title(f"$t = {t:.2f}$ ms")
     ax.set_xlabel(r"$x$ [km]")
     ax.set_ylabel(r"$y$ [km]")
     outfile = join(outdir, f"rho_{it:08d}.png")

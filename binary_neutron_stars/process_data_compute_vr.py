@@ -25,6 +25,7 @@ def process_one_iteration(it):
     x_uniform, y_uniform = vx_uniform.coordinates()
 
     # Now access the data directly
+    t  = vx_all.time_at_iteration(it) * T.value
     x  = x_uniform.data * L.value
     y  = y_uniform.data * L.value
     vx = vx_uniform.data
@@ -38,9 +39,10 @@ def process_one_iteration(it):
     fig, ax = subplots(figsize=(4,4))
     im  = pcolormesh(x, y, vr, cmap="bwr", vmin=-1, vmax=1)
     cb  = fig.colorbar(im, label="$v^{r}/c$")
+    ax.set_title(f"$t = {t:.2f}$ ms")
     ax.set_xlabel("$x$ [km]")
     ax.set_ylabel("$y$ [km]")
-    outfile = join(outdir, f"rho_{it:08d}.png")
+    outfile = join(outdir, f"vr_{it:08d}.png")
     savefig(outfile, dpi=150)
     close(fig)
     print(f"Finished processing iteration {it:08d}. Image saved to '{outfile}'.")
