@@ -1,0 +1,172 @@
+#-------------------------------------------------------------------------------
+# Thorn activation (number of thorns: 19)
+#-------------------------------------------------------------------------------
+ActiveThorns = "
+  ADMBase
+  AEILocalInterp
+  AHFinderDirect
+  Boundary
+  Carpet
+  CarpetInterp
+  CarpetIOASCII
+  CarpetReduce
+  CarpetRegrid2
+  CartGrid3D
+  CoordBase
+  MoL
+  NRPyEllipticET
+  QuasiLocalMeasures
+  SphericalSurface
+  StaticConformal
+  SymBase
+  TmunuBase
+"
+
+#-------------------------------------------------------------------------------
+# Core simulation parameters
+#-------------------------------------------------------------------------------
+
+#-----------------------------------------------------------
+# Parameters for thorn: Flesh/Cactus
+#-----------------------------------------------------------
+Cactus::cctk_itlast = 0
+#-------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+# Initial data parameters
+#-----------------------------------------------------------
+# Parameters for thorn: EinsteinBase/ADMBase
+#-----------------------------------------------------------
+ADMBase::initial_data  = "NRPyEllipticET"
+ADMBase::initial_lapse = "NRPyEllipticET-averaged"
+
+
+#-----------------------------------------------------------
+# Parameters for thorn: EinsteinInitialData/NRPyEllipticET
+#-----------------------------------------------------------
+NRPyEllipticET::N0 = 32
+NRPyEllipticET::N1 = 32
+NRPyEllipticET::foci_position                             = 5.0
+NRPyEllipticET::conformally_flat_BBH_puncture_0_bare_mass = 0.5
+NRPyEllipticET::conformally_flat_BBH_puncture_0_pos[0]    = NRPyEllipticET::foci_position
+NRPyEllipticET::conformally_flat_BBH_puncture_0_S  [2]    = 0.2
+NRPyEllipticET::conformally_flat_BBH_puncture_1_bare_mass = 0.5
+NRPyEllipticET::conformally_flat_BBH_puncture_1_pos[0]    = -NRPyEllipticET::foci_position
+NRPyEllipticET::conformally_flat_BBH_puncture_1_S  [2]    = 0.2
+#-------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+# Grid parameters
+#-------------------------------------------------------------------------------
+
+#-----------------------------------------------------------
+# Parameters for thorn: Carpet/Carpet
+#-----------------------------------------------------------
+Carpet::init_fill_timelevels    = "yes"
+Carpet::domain_from_coordbase   = "yes"
+Carpet::prolongation_order_time = 0
+Carpet::max_refinement_levels   = 11
+
+
+#-----------------------------------------------------------
+# Parameters for thorn: CactusBase/CartGrid3D
+#-----------------------------------------------------------
+CartGrid3D::type = "CoordBase"
+
+
+#-----------------------------------------------------------
+# Parameters for thorn: CactusBase/CoordBase
+#-----------------------------------------------------------
+CoordBase::dx   = 51.2
+CoordBase::dy   = CoordBase::dx
+CoordBase::dz   = CoordBase::dx
+CoordBase::xmax = +1024 + CoordBase::dx/(2**Carpet::max_refinement_levels)
+CoordBase::xmin = -1024 + CoordBase::dx/(2**Carpet::max_refinement_levels)
+CoordBase::ymax = CoordBase::xmax
+CoordBase::ymin = CoordBase::xmin
+CoordBase::zmax = CoordBase::xmax
+CoordBase::zmin = CoordBase::xmin
+
+
+#-----------------------------------------------------------
+# Parameters for thorn: Carpet/CarpetRegrid2
+#-----------------------------------------------------------
+CarpetRegrid2::num_centres  = 2
+CarpetRegrid2::num_levels_1 = Carpet::max_refinement_levels
+CarpetRegrid2::position_x_1 = NRPyEllipticET::foci_position
+CarpetRegrid2::radius_1     = [0, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1]
+
+CarpetRegrid2::num_levels_2 = Carpet::max_refinement_levels
+CarpetRegrid2::position_x_2 = -NRPyEllipticET::foci_position
+CarpetRegrid2::radius_2     = [0, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1]
+#-------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+# Diagnostics parameters
+#-------------------------------------------------------------------------------
+
+#-----------------------------------------------------------
+# Parameters for thorn: CactusNumerical/SphericalSurface
+#-----------------------------------------------------------
+SphericalSurface::nsurfaces     = 4
+SphericalSurface::maxntheta     = 81
+SphericalSurface::maxnphi       = 120
+SphericalSurface::ntheta        = [SphericalSurface::maxntheta, SphericalSurface::maxntheta, SphericalSurface::maxntheta, SphericalSurface::maxntheta]
+SphericalSurface::nphi          = [SphericalSurface::maxnphi  , SphericalSurface::maxnphi  , SphericalSurface::maxnphi  , SphericalSurface::maxnphi  ]
+SphericalSurface::radius        = [0, 0, -CoordBase::xmin/2, -CoordBase::xmin]
+SphericalSurface::set_spherical = ["no", "no", "yes", "yes"]
+
+
+#-----------------------------------------------------------
+# Parameters for thorn: EinsteinAnalysis/AHFinderDirect
+#-----------------------------------------------------------
+AHFinderDirect::N_horizons                               = 2
+AHFinderDirect::move_origins                             = yes
+AHFinderDirect::which_surface_to_store_info          [1] = 0
+AHFinderDirect::initial_guess__coord_sphere__radius  [1] = 0.3
+AHFinderDirect::origin_x                             [1] = CarpetRegrid2::position_x_1
+AHFinderDirect::initial_guess__coord_sphere__x_center[1] = CarpetRegrid2::position_x_1
+
+AHFinderDirect::which_surface_to_store_info          [2] = 1
+AHFinderDirect::initial_guess__coord_sphere__radius  [2] = 0.3
+AHFinderDirect::origin_x                             [2] = CarpetRegrid2::position_x_2
+AHFinderDirect::initial_guess__coord_sphere__x_center[2] = CarpetRegrid2::position_x_2
+
+#-----------------------------------------------------------
+# Parameters for thorn: EinsteinAnalysis/QuasiLocalMeasures
+#-----------------------------------------------------------
+QuasiLocalMeasures::verbose       = "yes"
+QuasiLocalMeasures::num_surfaces  = 4
+QuasiLocalMeasures::surface_index = [0, 1, 2, 3]
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+# Output parameters
+#-------------------------------------------------------------------------------
+
+#-----------------------------------------------------------
+# Parameters for thorn: Carpet/CarpetIOASCII
+#-----------------------------------------------------------
+CarpetIOASCII::out0D_every = 1
+CarpetIOASCII::out0D_vars  = "QuasiLocalMeasures::qlm_scalars"
+CarpetIOASCII::out1D_every = 1
+CarpetIOASCII::out1D_vars  = "ADMBase::alp"
+CarpetIOASCII::out2D_every = 1
+CarpetIOASCII::out2D_vars  = "ADMBase::alp"
+#-------------------------------------------------------------------------------
+
+
+#-----------------------------------------------------------
+# Active thorns with no parameters set (number of thorns: 8)
+#-----------------------------------------------------------
+# Numerical/AEILocalInterp
+# CactusBase/Boundary
+# Carpet/CarpetInterp
+# Carpet/CarpetReduce
+# CactusNumerical/MoL
+# EinsteinBase/StaticConformal
+# CactusBase/SymBase
+# EinsteinBase/TmunuBase
