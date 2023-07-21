@@ -2,24 +2,24 @@
 # Thorn activation (number of thorns: 19)
 #-------------------------------------------------------------------------------
 ActiveThorns = "
-  ADMBase
-  AEILocalInterp
-  AHFinderDirect
-  Boundary
-  Carpet
-  CarpetInterp
-  CarpetIOASCII
-  CarpetReduce
-  CarpetRegrid2
-  CartGrid3D
-  CoordBase
-  MoL
-  NRPyEllipticET
-  QuasiLocalMeasures
-  SphericalSurface
-  StaticConformal
-  SymBase
-  TmunuBase
+  ADMBase            # lapse, shift vector, spatial metric, extrinsic curvature
+  AEILocalInterp     # Provides interpolation for AMR gridfunctions
+  AHFinderDirect     # Thorn to find apparent horizons
+  Boundary           # This is used to inform Carpet about boundary conditions
+  Carpet             # This is the main driver: provides AMR
+  CarpetInterp       # Provides interpolation for AMR gridfunctions
+  CarpetIOASCII      # Thorn used for input/output of ASCII files
+  CarpetReduce       # Performs reductions (min, max, avg, sum, etc) on AMR grids
+  CarpetRegrid2      # This is the thorn used to set up the initial AMR grid
+  CartGrid3D         # Sets up the actual grids by writing to x, y, z gridfunctions (inherit "Grid")
+  CoordBase          # Set grid extent and step sizes
+  MoL                # Method of Lines thorn (not used in this parfile but still need to be active)
+  NRPyEllipticET     # Punture initial data thorn
+  QuasiLocalMeasures # Diagnostic thorn: computes integrals on surfaces
+  SphericalSurface   # Sets up spherical surfaces
+  StaticConformal    # This shouldn't be here
+  SymBase            # This is used to set symmetries (e.g., reflection, rotational, etc)
+  TmunuBase          # Provides energy-momentum tensor gridfunctions
 "
 
 #-------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ ActiveThorns = "
 #-----------------------------------------------------------
 # Parameters for thorn: Flesh/Cactus
 #-----------------------------------------------------------
-Cactus::cctk_itlast = 0
+Cactus::cctk_itlast = 0 # Stop after iteration 0
 #-------------------------------------------------------------------------------
 
 
@@ -38,13 +38,15 @@ Cactus::cctk_itlast = 0
 #-----------------------------------------------------------
 # Parameters for thorn: EinsteinBase/ADMBase
 #-----------------------------------------------------------
-ADMBase::initial_data  = "NRPyEllipticET"
-ADMBase::initial_lapse = "NRPyEllipticET-averaged"
+ADMBase::initial_data  = "NRPyEllipticET"          # NRPyEllipticET will set metric
+ADMBase::initial_lapse = "NRPyEllipticET-averaged" # NRPyEllipticET will set the lapse
 
 
 #-----------------------------------------------------------
 # Parameters for thorn: EinsteinInitialData/NRPyEllipticET
 #-----------------------------------------------------------
+# Single puncture initial data located at (x,y,z) = (5,0,0) with
+# bare mass 0.5 and spin 0.2 in the z-direction.
 NRPyEllipticET::N0 = 32
 NRPyEllipticET::N1 = 32
 NRPyEllipticET::foci_position                             = 5.0
@@ -80,8 +82,8 @@ CartGrid3D::type = "CoordBase"
 CoordBase::dx   = 51.2
 CoordBase::dy   = CoordBase::dx
 CoordBase::dz   = CoordBase::dx
-CoordBase::xmax = +1024 + CoordBase::dx/(2**Carpet::max_refinement_levels)
-CoordBase::xmin = -1024 + CoordBase::dx/(2**Carpet::max_refinement_levels)
+CoordBase::xmax = +1024
+CoordBase::xmin = -1024
 CoordBase::ymax = CoordBase::xmax
 CoordBase::ymin = CoordBase::xmin
 CoordBase::zmax = CoordBase::xmax
@@ -91,6 +93,9 @@ CoordBase::zmin = CoordBase::xmin
 #-----------------------------------------------------------
 # Parameters for thorn: Carpet/CarpetRegrid2
 #-----------------------------------------------------------
+# Creates a single grid hierarchy centered at NRPyEllipticET::foci_position
+# with Carpet::max_refinement_levels refinement levels and radii specified
+# by CarpetRegrid2::radius_1.
 CarpetRegrid2::num_centres  = 1
 CarpetRegrid2::num_levels_1 = Carpet::max_refinement_levels
 CarpetRegrid2::position_x_1 = NRPyEllipticET::foci_position
@@ -107,21 +112,29 @@ CarpetRegrid2::radius_1     = [0, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1]
 #-----------------------------------------------------------
 # Parameters for thorn: CactusNumerical/SphericalSurface
 #-----------------------------------------------------------
+# This configuration allocates memory for two spherical surface
+# grids with 81 x 120 points. One grid (the first) is left for
+# AHFinderDirect to set up while one grid (the second) is set
+# up by this thorn.
 SphericalSurface::nsurfaces     = 2
 SphericalSurface::maxntheta     = 81
 SphericalSurface::maxnphi       = 120
 SphericalSurface::ntheta        = [SphericalSurface::maxntheta, SphericalSurface::maxntheta]
 SphericalSurface::nphi          = [SphericalSurface::maxnphi  , SphericalSurface::maxnphi  ]
-SphericalSurface::radius        = [0, -CoordBase::xmin]
-SphericalSurface::set_spherical = ["no", "yes"]
+SphericalSurface::radius        = [-CoordBase::xmin, 0]
+SphericalSurface::set_spherical = ["yes", "no"]
 
 
 #-----------------------------------------------------------
 # Parameters for thorn: EinsteinAnalysis/AHFinderDirect
 #-----------------------------------------------------------
+# This sets up AHFinderDirect to search for a single horizon
+# initially located at (x,y,z) = (5,0,0). We guess the horizon
+# radius to be 0.3 and we ask it to store the information on
+# spherical surface "0".
 AHFinderDirect::N_horizons                               = 1
-AHFinderDirect::move_origins                             = yes
-AHFinderDirect::which_surface_to_store_info          [1] = 0
+AHFinderDirect::move_origins                             = yes # Allow horizon center to evolve in time
+AHFinderDirect::which_surface_to_store_info          [1] = 1
 AHFinderDirect::initial_guess__coord_sphere__radius  [1] = 0.3
 AHFinderDirect::origin_x                             [1] = NRPyEllipticET::foci_position
 AHFinderDirect::initial_guess__coord_sphere__x_center[1] = NRPyEllipticET::foci_position
